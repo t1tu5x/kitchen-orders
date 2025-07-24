@@ -6,13 +6,13 @@ import os
 # ---------- Настройки ----------
 FILENAME = "orders.csv"
 MEALS = [
-    "חזה עוף על הגריל",
-    "צ'יפס גדול",
     "שניצל עם צ'יפס",
+    "צ'יפס גדול",
+    "חמין עם עוף",
     "סלט טונה",
     "פלטת גבינות",
     "פלטת ירקות",
-    "חמין עם עוף",
+    "חזה עוף על הגריל",
     "סלט טונה - שבת",
     "ארוחה קלה בחדר אוכל"
 ]
@@ -23,7 +23,7 @@ if not os.path.exists(FILENAME):
     df.to_csv(FILENAME, index=False)
 
 # ---------- Заголовок ----------
-st.title(":shallow_pan_of_food: מערכת הזמנות למטבח")
+st.title(":fries: מערכת הזמנות למטבח")
 
 # ---------- Выбор блюда ----------
 selected_meal = st.selectbox("בחר מנה", MEALS)
@@ -42,7 +42,8 @@ if st.button("להזמין"):
 
 # ---------- Показать заказы за сегодня ----------
 st.subheader(":calendar: הזמנות להיום")
-df = pd.read_csv(FILENAME)
+df = pd.read_csv(FILENAME, encoding='utf-8')
+df['date'] = df['date'].astype(str)
 today = date.today().isoformat()
 df_today = df[df['date'] == today]
 
@@ -59,15 +60,15 @@ for i, row in df_today.iterrows():
             to_delete = i
 
 # Удаление записи
-if to_delete is not None:
+if to_delete is not None and to_delete in df.index:
     df.drop(index=to_delete, inplace=True)
     df.to_csv(FILENAME, index=False)
-    st.experimental_rerun()
+    st.rerun()
 
 # ---------- Сводка по сегодняшним заказам ----------
 st.subheader(":bar_chart: סיכום להיום")
 summary = df_today.groupby('meal_name')['quantity'].sum().reset_index()
-summary.columns = ['מנה', 'סה"כ']
+summary.columns = ['מנה', 'סה\"כ']
 st.dataframe(summary, use_container_width=True)
 
 # ---------- История по дате ----------
@@ -77,8 +78,7 @@ df_selected = df[df['date'] == selected_date.isoformat()]
 if not df_selected.empty:
     st.write(f"סה\"כ הזמנות ליום {selected_date.isoformat()}:")
     hist_summary = df_selected.groupby('meal_name')['quantity'].sum().reset_index()
-    hist_summary.columns = ['מנה', 'סה"כ']
+    hist_summary.columns = ['מנה', 'סה\"כ']
     st.dataframe(hist_summary, use_container_width=True)
 else:
     st.info("אין הזמנות בתאריך זה.")
-
