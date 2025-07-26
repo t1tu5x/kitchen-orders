@@ -14,9 +14,9 @@ try:
     client = gspread.authorize(creds)
     sheet = client.open_by_url("https://docs.google.com/spreadsheets/d/1OX_vT9Qcb51niAQ8ACcB5xTs9LuqNWrQOwAxZpJNLyw/edit").sheet1
 except Exception as e:
-import traceback
-st.error("שגיאה בחיבור ל-Google Sheets")
-st.text(traceback.format_exc())
+    import traceback
+    st.error("שגיאה בחיבור ל-Google Sheets")
+    st.text(traceback.format_exc())
 
     st.stop()
 
