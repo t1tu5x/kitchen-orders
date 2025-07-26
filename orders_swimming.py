@@ -4,6 +4,8 @@ from datetime import datetime, date
 from google.oauth2.service_account import Credentials
 import gspread
 
+st.write("Содержимое secrets.toml:", st.secrets)
+
 # ---------- Подключение к Google Sheets ----------
 SCOPE = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
 creds = Credentials.from_service_account_info(st.secrets["gsheets"], scopes=SCOPE)
