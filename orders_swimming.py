@@ -66,8 +66,21 @@ else:
 if df_today.empty:
     st.info("אין הזמנות להיום")
 else:
-    for _, row in df_today.iterrows():
+    st.write("### מחיקת הזמנה מהיום")
+for idx, row in df_today.iterrows():
+    col1, col2 = st.columns([4, 1])
+    with col1:
         st.write(f"{row['meal_name']} x{row['quantity']} — {row['timestamp'][11:16]}")
+    with col2:
+        if st.button("❌ מחק", key=f"del_{idx}"):
+            # Найдём строку по timestamp
+            all_data = sheet.get_all_values()
+            for i, r in enumerate(all_data):
+                if r[0] == row["timestamp"]:  # timestamp
+                    sheet.delete_rows(i + 1)  # строки в gspread с 1, не с 0
+                    st.success("הוזמנה נמחקה")
+                    st.experimental_rerun()
+
     st.markdown("---")
     summary = df_today.groupby("meal_name")["quantity"].sum().reset_index()
     summary.columns = ["מנה", "סה\"כ"]
