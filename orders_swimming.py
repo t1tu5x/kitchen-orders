@@ -1,11 +1,8 @@
 import streamlit as st
-st.write("DEBUG: secrets loaded:", st.secrets.get("gsheets", {}))
-
 import pandas as pd
 from datetime import datetime, date
 from google.oauth2.service_account import Credentials
 import gspread
-
 
 # ---------- Авторизация ----------
 SCOPE = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
@@ -17,7 +14,6 @@ except Exception as e:
     import traceback
     st.error("שגיאה בחיבור ל-Google Sheets")
     st.text(traceback.format_exc())
-
     st.stop()
 
 # ---------- UI ----------
@@ -50,7 +46,10 @@ if st.button("להזמין"):
 # ---------- Чтение данных ----------
 try:
     data = sheet.get_all_records()
-    df = pd.DataFrame(data)
+    if data:
+        df = pd.DataFrame(data)
+    else:
+        df = pd.DataFrame(columns=["timestamp", "date", "meal_name", "quantity"])
 except Exception as e:
     st.warning(f"שגיאה בקריאת הנתונים: {e}")
     df = pd.DataFrame(columns=["timestamp", "date", "meal_name", "quantity"])
@@ -61,9 +60,8 @@ today = date.today().isoformat()
 if "date" in df.columns:
     df_today = df[df["date"] == today]
 else:
-    st.warning("לא נמצאו עמודות בטבלה. בדוק את הגיליון Google Sheets.")
     df_today = pd.DataFrame(columns=["timestamp", "date", "meal_name", "quantity"])
-
+    st.warning("לא נמצאו עמודות בטבלה. בדוק את הגיליון Google Sheets.")
 
 if df_today.empty:
     st.info("אין הזמנות להיום")
@@ -79,11 +77,14 @@ else:
 # ---------- История по дате ----------
 st.subheader("📆 היסטוריה לפי תאריך")
 selected_date = st.date_input("בחר תאריך")
-df_sel = df[df["date"] == selected_date.isoformat()]
 
-if df_sel.empty:
-    st.info("אין הזמנות בתאריך זה.")
+if "date" in df.columns:
+    df_sel = df[df["date"] == selected_date.isoformat()]
+    if df_sel.empty:
+        st.info("אין הזמנות בתאריך זה.")
+    else:
+        hist = df_sel.groupby("meal_name")["quantity"].sum().reset_index()
+        hist.columns = ["מנה", "סה\"כ"]
+        st.dataframe(hist, use_container_width=True)
 else:
-    hist = df_sel.groupby("meal_name")["quantity"].sum().reset_index()
-    hist.columns = ["מנה", "סה\"כ"]
-    st.dataframe(hist, use_container_width=True)
+    st.warning("הטבלה אינה מכילה עמודת 'date'. נא לבדוק את הגיליון.")
