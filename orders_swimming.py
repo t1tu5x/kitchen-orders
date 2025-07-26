@@ -58,7 +58,12 @@ except Exception as e:
 # ---------- Заказы за сегодня ----------
 st.subheader("📅 הזמנות להיום")
 today = date.today().isoformat()
-df_today = df[df["date"] == today]
+if "date" in df.columns:
+    df_today = df[df["date"] == today]
+else:
+    st.warning("לא נמצאו עמודות בטבלה. בדוק את הגיליון Google Sheets.")
+    df_today = pd.DataFrame(columns=["timestamp", "date", "meal_name", "quantity"])
+
 
 if df_today.empty:
     st.info("אין הזמנות להיום")
