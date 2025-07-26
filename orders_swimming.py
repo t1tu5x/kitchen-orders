@@ -1,5 +1,6 @@
 import streamlit as st
 import pandas as pd
+from zoneinfo import ZoneInfo
 from datetime import datetime, date
 from google.oauth2.service_account import Credentials
 import gspread
@@ -35,8 +36,9 @@ selected_meal = st.selectbox("בחר מנה", MEALS)
 quantity = st.number_input("כמות", min_value=1, value=1, step=1)
 
 if st.button("להזמין"):
-    now = datetime.now()
+    now = datetime.now(ZoneInfo("Asia/Jerusalem"))
     row = [now.strftime("%Y-%m-%d %H:%M:%S"), now.date().isoformat(), selected_meal, quantity]
+
     try:
         sheet.append_row(row)
         st.success("הוזמן בהצלחה!")
