@@ -9,7 +9,7 @@ SCOPE = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis
 try:
     creds = Credentials.from_service_account_info(st.secrets["gsheets"], scopes=SCOPE)
     client = gspread.authorize(creds)
-    sheet = client.open("kitchen-orders").sheet1
+    sheet = client.open_by_url("https://docs.google.com/spreadsheets/d/10X_vT9Qc...your_id.../edit").sheet1
 except Exception as e:
     st.error(f"שגיאה בחיבור ל-Google Sheets: {e}")
     st.stop()
