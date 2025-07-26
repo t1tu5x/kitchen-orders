@@ -1,10 +1,11 @@
 import streamlit as st
+st.write("DEBUG: secrets loaded:", st.secrets.get("gsheets", {}))
+
 import pandas as pd
 from datetime import datetime, date
 from google.oauth2.service_account import Credentials
 import gspread
 
-st.write("DEBUG: secrets loaded:", st.secrets.get("gsheets", {}))
 
 # ---------- Авторизация ----------
 SCOPE = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
