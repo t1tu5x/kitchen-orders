@@ -1,7 +1,3 @@
-import streamlit as st
-import pandas as pd
-from datetime import datetime, date
-import os
 
 # ---------- Настройки ----------
 FILENAME = "orders.csv"
@@ -15,70 +11,89 @@ MEALS = [
     "חזה עוף על הגריל",
     "סלט טונה - שבת",
     "ארוחה קלה בחדר אוכל"
+
+    import streamlit as st
+import pandas as pd
+from datetime import datetime, date
+from google.oauth2.service_account import Credentials
+import gspread
+
+# ---------- Подключение к Google Sheets ----------
+SCOPE = ["https://www.googleapis.com/auth/spreadsheets", "https://www.googleapis.com/auth/drive"]
+creds = Credentials.from_service_account_info(st.secrets["gsheets"], scopes=SCOPE)
+client = gspread.authorize(creds)
+
+# Попытка открыть таблицу
+try:
+    sheet = client.open("kitchen-orders").sheet1
+    data = sheet.get_all_records()
+except Exception as e:
+    st.error(f"שגיאה בחיבור ל-Google Sheets: {e}")
+    st.stop()
+
+# ---------- Интерфейс ----------
+st.title("🍟 מערכת הזמנות למטבח")
+
+# ---------- Меню ----------
+MEALS = [
+    "שניצל עם צ'יפס",
+    "צ'יפס גדול",
+    "חמין עם עוף",
+    "סלט טונה",
+    "פלטת גבינות",
+    "פלטת ירקות",
+    "חזה עוף על הגריל",
+    "סלט טונה - שבת",
+    "ארוחה קלה בחדר אוכל"
 ]
 
-# ---------- Загрузка/создание CSV ----------
-if not os.path.exists(FILENAME):
-    df = pd.DataFrame(columns=["timestamp", "date", "meal_name", "quantity"])
-    df.to_csv(FILENAME, index=False)
-
-# ---------- Заголовок ----------
-st.title(":fries: מערכת הזמנות למטבח")
-
-# ---------- Выбор блюда ----------
 selected_meal = st.selectbox("בחר מנה", MEALS)
 quantity = st.number_input("כמות", min_value=1, value=1, step=1)
 
 if st.button("להזמין"):
-    now = datetime.now()
-    new_order = pd.DataFrame({
-        "timestamp": [now.strftime("%Y-%m-%d %H:%M:%S")],
-        "date": [now.date().isoformat()],
-        "meal_name": [selected_meal],
-        "quantity": [quantity]
-    })
-    new_order.to_csv(FILENAME, mode='a', header=False, index=False)
-    st.success("הוזמן בהצלחה!")
+    with st.spinner("שולח הזמנה..."):
+        now = datetime.now()
+        new_row = [now.strftime("%Y-%m-%d %H:%M:%S"), now.date().isoformat(), selected_meal, quantity]
+        try:
+            sheet.append_row(new_row)
+            st.success("הוזמן בהצלחה!")
+        except Exception as e:
+            st.error(f"שגיאה בשליחה: {e}")
 
-# ---------- Показать заказы за сегодня ----------
-st.subheader(":calendar: הזמנות להיום")
-df = pd.read_csv(FILENAME, encoding='utf-8')
-df['date'] = df['date'].astype(str)
+# ---------- Загрузка данных в DataFrame ----------
+if data:
+    df = pd.DataFrame(data)
+    if not all(col in df.columns for col in ["timestamp", "date", "meal_name", "quantity"]):
+        st.error("הטבלה חסרה עמודות נדרשות.")
+        st.stop()
+else:
+    df = pd.DataFrame(columns=["timestamp", "date", "meal_name", "quantity"])
+
+# ---------- Заказы за сегодня ----------
+st.subheader("📅 הזמנות להיום")
 today = date.today().isoformat()
-df_today = df[df['date'] == today]
+df_today = df[df["date"] == today]
 
-# Кнопки удаления по индексу
-to_delete = None
-for i, row in df_today.iterrows():
-    col1, col2, col3, col4, col5 = st.columns([3, 3, 2, 4, 2])
-    with col1: st.write(row['meal_name'])
-    with col2: st.write(f"x{row['quantity']}")
-    with col3: st.write(row['timestamp'][11:16])
-    with col4: st.write("")
-    with col5:
-        if st.button("בטל", key=f"del_{i}"):
-            to_delete = i
-
-# Удаление записи
-if to_delete is not None and to_delete in df.index:
-    df.drop(index=to_delete, inplace=True)
-    df.to_csv(FILENAME, index=False)
-    st.rerun()
-
-# ---------- Сводка по сегодняшним заказам ----------
-st.subheader(":bar_chart: סיכום להיום")
-summary = df_today.groupby('meal_name')['quantity'].sum().reset_index()
-summary.columns = ['מנה', 'סה\"כ']
-st.dataframe(summary, use_container_width=True)
+if df_today.empty:
+    st.info("אין הזמנות להיום")
+else:
+    for _, row in df_today.iterrows():
+        st.write(f"{row['meal_name']} x{row['quantity']} — {row['timestamp'][11:16]}")
+    st.markdown("---")
+    summary_today = df_today.groupby("meal_name")["quantity"].sum().reset_index()
+    summary_today.columns = ["מנה", "סה\"כ"]
+    st.subheader("📊 סיכום להיום")
+    st.dataframe(summary_today, use_container_width=True)
 
 # ---------- История по дате ----------
-st.subheader(":date: היסטוריה לפי תאריך")
+st.subheader("📅 היסטוריה לפי תאריך")
 selected_date = st.date_input("בחר תאריך")
-df_selected = df[df['date'] == selected_date.isoformat()]
-if not df_selected.empty:
-    st.write(f"סה\"כ הזמנות ליום {selected_date.isoformat()}:")
-    hist_summary = df_selected.groupby('meal_name')['quantity'].sum().reset_index()
-    hist_summary.columns = ['מנה', 'סה\"כ']
-    st.dataframe(hist_summary, use_container_width=True)
-else:
+df_sel = df[df["date"] == selected_date.isoformat()]
+
+if df_sel.empty:
     st.info("אין הזמנות בתאריך זה.")
+else:
+    summary_hist = df_sel.groupby("meal_name")["quantity"].sum().reset_index()
+    summary_hist.columns = ["מנה", "סה\"כ"]
+    st.dataframe(summary_hist, use_container_width=True)
+
