@@ -79,7 +79,9 @@ for idx, row in df_today.iterrows():
                 if r[0] == row["timestamp"]:  # timestamp
                     sheet.delete_rows(i + 1)  # строки в gspread с 1, не с 0
                     st.success("הוזמנה נמחקה")
-                    st.experimental_rerun()
+                    st.success("הוזמנה נמחקה! אנא רענן את הדף.")
+                    st.stop()
+
 
     st.markdown("---")
     summary = df_today.groupby("meal_name")["quantity"].sum().reset_index()
