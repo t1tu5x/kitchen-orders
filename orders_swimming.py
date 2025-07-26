@@ -1,18 +1,4 @@
-
-# ---------- Настройки ----------
-FILENAME = "orders.csv"
-MEALS = [
-    "שניצל עם צ'יפס",
-    "צ'יפס גדול",
-    "חמין עם עוף",
-    "סלט טונה",
-    "פלטת גבינות",
-    "פלטת ירקות",
-    "חזה עוף על הגריל",
-    "סלט טונה - שבת",
-    "ארוחה קלה בחדר אוכל"
-
-    import streamlit as st
+import streamlit as st
 import pandas as pd
 from datetime import datetime, date
 from google.oauth2.service_account import Credentials
